@@ -147,6 +147,7 @@ PHP_MINFO_FUNCTION(llvm_bind)
 /* {{{ proto bool LLVMBind::__construct() */
 PHP_METHOD(LLVMBind, __construct)
 {
+    load();
 }
 
 void initLLVMBindClass(TSRMLS_D)

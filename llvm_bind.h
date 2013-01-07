@@ -11,6 +11,8 @@
 
 #include "php.h"
 
+#include "export.h"
+
 PHP_MINIT_FUNCTION(llvm_bind);
 PHP_MSHUTDOWN_FUNCTION(llvm_bind);  
 PHP_RINIT_FUNCTION(llvm_bind);

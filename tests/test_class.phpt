@@ -7,7 +7,6 @@ if(class_exists('LLVMBind')){
 }
 else{
   echo "FAIL";
-  print_r(get_declared_classes());
 }
 ?>
 --EXPECTF--
