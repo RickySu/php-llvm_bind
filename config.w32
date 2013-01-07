@@ -1,0 +1,13 @@
+// $Id$
+// vim:ft=javascript
+
+// If your extension references something external, use ARG_WITH
+// ARG_WITH("llvm_bind", "for llvm_bind support", "no");
+
+// Otherwise, use ARG_ENABLE
+// ARG_ENABLE("llvm_bind", "enable llvm_bind support", "no");
+
+if (PHP_LLVM_BIND != "no") {
+	EXTENSION("llvm_bind", "llvm_bind.c");
+}
+
