@@ -41,15 +41,15 @@ void llvm_init()
     llvm_start_multithreaded();
 }
 
-void *llvm_newResource()
+LLVMRESOURCE llvm_newResource()
 {
     LLVMResource *Resource = new LLVMResource();
-    return NULL;
+    return (LLVMRESOURCE) Resource;
 }
 
-void llvm_freeResource(void*Resource)
+void llvm_freeResource(LLVMRESOURCE Resource)
 {
-    delete (LLVMResource*)Resource;
+    delete (LLVMResource *)Resource;
 }
 
 int load()

@@ -5,8 +5,10 @@
 # include "config.h"
 #endif
 
+#define LLVMRESOURCE void *
+
 void llvm_init();
-void *llvm_newResource();
-void llvm_freeResource(void*);
+LLVMRESOURCE llvm_newResource();
+void llvm_freeResource(LLVMRESOURCE);
 
 #endif

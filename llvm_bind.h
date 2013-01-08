@@ -19,11 +19,12 @@ PHP_RINIT_FUNCTION(llvm_bind);
 PHP_RSHUTDOWN_FUNCTION(llvm_bind);
 PHP_MINFO_FUNCTION(llvm_bind);
   
-//PHP_FUNCTION(mytest);
 PHP_METHOD(LLVMBind, __construct);
 
 void initLLVMBindClass(TSRMLS_D);
-
+zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC);
+void free_llvm_resource(void *object TSRMLS_DC);
 extern zend_module_entry zmq_module_entry;
+
 
 #endif

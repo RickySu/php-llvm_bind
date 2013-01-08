@@ -18,6 +18,7 @@
 
 /* $Id$ */
 #include "llvm_bind.h"
+#include "llvm_bind_struct.h"
 
 /* If you declare any globals in php_llvm_bind.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(llvm_bind)
@@ -148,13 +149,37 @@ PHP_MINFO_FUNCTION(llvm_bind)
 /* {{{ proto bool LLVMBind::__construct() */
 PHP_METHOD(LLVMBind, __construct)
 {
-    load();
 }
 
 void initLLVMBindClass(TSRMLS_D)
 {
     zend_class_entry ce;
     INIT_CLASS_ENTRY(ce, "LLVMBind", llvm_bind_methods);
+    ce.create_object = create_llvm_resource;
     llvm_bind_ce = zend_register_internal_class(&ce TSRMLS_CC);    
-//    ce.create_object = create_cult_secrets;
+}
+
+zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {
+  zend_object_value retval;
+  llvm_resource *internal_resource;
+  zval *tmp;
+  internal_resource = (llvm_resource *) emalloc(sizeof(llvm_resource));
+  memset(internal_resource, 0, sizeof(llvm_resource));
+  internal_resource->resource=llvm_newResource();
+  zend_object_std_init(&internal_resource->zo, class_type TSRMLS_CC);
+  zend_hash_copy(internal_resource->zo.properties,
+       &class_type->default_properties,
+       (copy_ctor_func_t) zval_property_ctor,
+       (void *) &tmp,
+       sizeof(zval *));
+  retval.handle = zend_objects_store_put(internal_resource,(zend_objects_store_dtor_t) zend_objects_destroy_object,free_llvm_resource, NULL TSRMLS_CC);
+  retval.handlers = zend_get_std_object_handlers();
+  return retval;
+}
+
+void free_llvm_resource(void *object TSRMLS_DC){
+  llvm_resource *internal_resource=(llvm_resource *) object;
+  llvm_freeResource(internal_resource->resource);
+  zend_object_std_dtor(&internal_resource->zo);
+  efree(internal_resource);
 }
