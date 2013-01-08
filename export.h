@@ -10,5 +10,6 @@
 void llvm_init();
 LLVMRESOURCE llvm_newResource();
 void llvm_freeResource(LLVMRESOURCE);
+int llvm_loadBitcode(LLVMRESOURCE _Resource,char *Buffer,size_t size,const char **errormsg);
 
 #endif

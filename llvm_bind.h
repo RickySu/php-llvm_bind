@@ -20,6 +20,8 @@ PHP_RSHUTDOWN_FUNCTION(llvm_bind);
 PHP_MINFO_FUNCTION(llvm_bind);
   
 PHP_METHOD(LLVMBind, __construct);
+PHP_METHOD(LLVMBind, loadBitcode);
+
 
 void initLLVMBindClass(TSRMLS_D);
 zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC);

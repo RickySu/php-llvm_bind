@@ -30,7 +30,8 @@ zend_class_entry *llvm_bind_ce;
 static int le_llvm_bind;
 
 /* {{{ arginfo */
-ZEND_BEGIN_ARG_INFO(arginfo_llvm_bind_void, 0)
+ZEND_BEGIN_ARG_INFO(arginfo_llvm_bind_loadBitcode, 0)
+    ZEND_ARG_INFO(0, bitcode)
 ZEND_END_ARG_INFO()
 /* }}} */
 
@@ -39,7 +40,8 @@ ZEND_END_ARG_INFO()
  * Every user visible function must have an entry in llvm_bind_functions[].
  */
 const zend_function_entry llvm_bind_methods[] = {
-        PHP_ME(LLVMBind,    __construct,    arginfo_llvm_bind_void,    ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+        PHP_ME(LLVMBind,    __construct,  NULL,    ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+        PHP_ME(LLVMBind,    loadBitcode,    arginfo_llvm_bind_loadBitcode,  ZEND_ACC_PUBLIC)
 	PHP_FE_END	/* Must be the last line in llvm_bind_functions[] */
 };
 /* }}} */
@@ -150,6 +152,29 @@ PHP_MINFO_FUNCTION(llvm_bind)
 PHP_METHOD(LLVMBind, __construct)
 {
 }
+/*}}}*/
+
+/* {{{ proto bool LLVMBind::loadBitcode($bitcode) */
+PHP_METHOD(LLVMBind, loadBitcode)
+{
+    char *bitcode;
+    size_t bitcode_len,errormsg_len;
+    zval *object = getThis();
+    zval *errormsg = NULL;
+    
+    llvm_resource *internal_resource;
+    const char *error=NULL;
+    
+    internal_resource = (llvm_resource *)zend_object_store_get_object(object TSRMLS_CC);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &bitcode, &bitcode_len)) {
+        return;
+    }
+    if(llvm_loadBitcode(internal_resource->resource,bitcode,bitcode_len,&error)>0){
+        RETURN_FALSE;
+    }
+    RETURN_TRUE;
+}
+/*}}}*/
 
 void initLLVMBindClass(TSRMLS_D)
 {

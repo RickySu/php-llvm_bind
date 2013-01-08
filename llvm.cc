@@ -52,6 +52,25 @@ void llvm_freeResource(LLVMRESOURCE Resource)
     delete (LLVMResource *)Resource;
 }
 
+int llvm_loadBitcode(LLVMRESOURCE _Resource,char *Buffer,size_t size,const char **errormsg)
+{
+    string error;
+    Module *m;
+    LLVMResource *Resource = (LLVMResource *) _Resource;
+    ExecutionEngine *ee = Resource->getExecutionEngine();
+    MemoryBuffer *Mem=MemoryBuffer::getMemBuffer(StringRef(Buffer,size),"",false);
+    m=ParseBitcodeFile(Mem, Resource->getContext(), &error);
+    if( error.length() > 0){
+        *errormsg=error.c_str();
+        return 1;
+    }
+    ee->addModule(m);
+/*    Function* func = ee->FindFunctionNamed("main");
+    void (*mainFunc)() = (void (*)()) ee->getPointerToFunction(func);
+    mainFunc();*/
+    return 0;
+}
+
 int load()
 {
     const char * filename="a.bc";

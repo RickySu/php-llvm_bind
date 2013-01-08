@@ -32,6 +32,8 @@ class LLVMResource{
         llvm::Module *MainModule;
     public:
         LLVMResource();
+        llvm::LLVMContext &getContext();
+        llvm::ExecutionEngine *getExecutionEngine();        
         ~LLVMResource();
 };
   
