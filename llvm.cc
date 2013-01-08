@@ -3,7 +3,7 @@
 using namespace std;
 using namespace llvm;
 
-void displayErrorInfo(SMDiagnostic& err)
+MakeErrorInfo(SMDiagnostic& err)
 {
     std::string errFileName = err.getFilename();
     std::string errMsg = err.getMessage();
@@ -52,6 +52,25 @@ void llvm_freeResource(LLVMRESOURCE Resource)
     delete (LLVMResource *)Resource;
 }
 
+size_t llvm_compileAssembly(LLVMRESOURCE _Resource,char *Buffer,size_t size,char **Output,const char **errormsg)
+{    
+    std::string str,bitcodeString;
+    SMDiagnostic error;
+    Module *m;
+    LLVMResource *Resource = (LLVMResource *) _Resource;
+    MemoryBuffer *Mem=MemoryBuffer::getMemBuffer(StringRef(Buffer,size),"",false);
+    m=ParseAssembly(Mem, 0, error, Resource->getContext());
+    if(m==NULL){
+        return 0;
+    }
+    raw_string_ostream stream(str);
+    WriteBitcodeToFile(m,stream);
+    bitcodeString=stream.str();
+    *Output=(char*)emalloc(bitcodeString.length());
+    bitcodeString.copy(*Output,bitcodeString.length());    
+    return bitcodeString.length();
+}
+
 int llvm_loadBitcode(LLVMRESOURCE _Resource,char *Buffer,size_t size,const char **errormsg)
 {
     string error;
@@ -65,9 +84,6 @@ int llvm_loadBitcode(LLVMRESOURCE _Resource,char *Buffer,size_t size,const char 
         return 1;
     }
     ee->addModule(m);
-/*    Function* func = ee->FindFunctionNamed("main");
-    void (*mainFunc)() = (void (*)()) ee->getPointerToFunction(func);
-    mainFunc();*/
     return 0;
 }
 

@@ -3,7 +3,8 @@
 
 typedef struct _llvm_resource{
     zend_object zo;
-    LLVMRESOURCE resource;    
+    LLVMRESOURCE resource;
+    const char * last_error;
 } llvm_resource;
 
 #endif

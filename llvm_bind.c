@@ -35,12 +35,20 @@ ZEND_BEGIN_ARG_INFO(arginfo_llvm_bind_loadBitcode, 0)
 ZEND_END_ARG_INFO()
 /* }}} */
 
+/* {{{ arginfo */
+ZEND_BEGIN_ARG_INFO(arginfo_llvm_bind_compileAssembly, 0)
+    ZEND_ARG_INFO(0, assembly)
+ZEND_END_ARG_INFO()
+/* }}} */
+
 /* {{{ llvm_bind_methods[]
  *
  * Every user visible function must have an entry in llvm_bind_functions[].
  */
 const zend_function_entry llvm_bind_methods[] = {
         PHP_ME(LLVMBind,    __construct,  NULL,    ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+        PHP_ME(LLVMBind,    compileAssembly,    arginfo_llvm_bind_compileAssembly,  ZEND_ACC_PUBLIC)
+        PHP_ME(LLVMBind,    getLastError,    NULL,  ZEND_ACC_PUBLIC)
         PHP_ME(LLVMBind,    loadBitcode,    arginfo_llvm_bind_loadBitcode,  ZEND_ACC_PUBLIC)
 	PHP_FE_END	/* Must be the last line in llvm_bind_functions[] */
 };
@@ -158,21 +166,49 @@ PHP_METHOD(LLVMBind, __construct)
 PHP_METHOD(LLVMBind, loadBitcode)
 {
     char *bitcode;
-    size_t bitcode_len,errormsg_len;
+    size_t bitcode_len;
     zval *object = getThis();
-    zval *errormsg = NULL;
-    
     llvm_resource *internal_resource;
-    const char *error=NULL;
     
     internal_resource = (llvm_resource *)zend_object_store_get_object(object TSRMLS_CC);
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &bitcode, &bitcode_len)) {
         return;
     }
-    if(llvm_loadBitcode(internal_resource->resource,bitcode,bitcode_len,&error)>0){
+    if(llvm_loadBitcode(internal_resource->resource,bitcode,bitcode_len,&internal_resource->last_error)>0){
         RETURN_FALSE;
     }
     RETURN_TRUE;
+}
+/*}}}*/
+
+/* {{{ proto bool LLVMBind::compileAssembly($assembly) */
+PHP_METHOD(LLVMBind, compileAssembly)
+{
+    char *assembly, *bitcode;
+    size_t assembly_len,bitcode_len;
+    zval *object = getThis();
+    llvm_resource *internal_resource;
+    
+    internal_resource = (llvm_resource *)zend_object_store_get_object(object TSRMLS_CC);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &assembly, &assembly_len)) {
+        return;
+    }
+    if((bitcode_len=llvm_compileAssembly(internal_resource->resource,assembly,assembly_len,&bitcode,&internal_resource->last_error))>0){
+        RETVAL_STRINGL(bitcode,bitcode_len,1);
+        efree(bitcode);
+        return;
+    }
+    RETURN_FALSE;
+}
+/*}}}*/
+
+/* {{{ proto bool LLVMBind::getLastError() */
+PHP_METHOD(LLVMBind, getLastError)
+{
+    zval *object = getThis();
+    llvm_resource *internal_resource;    
+    internal_resource = (llvm_resource *)zend_object_store_get_object(object TSRMLS_CC);
+    RETURN_STRING(internal_resource->last_error,1);
 }
 /*}}}*/
 
@@ -191,6 +227,7 @@ zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {
   internal_resource = (llvm_resource *) emalloc(sizeof(llvm_resource));
   memset(internal_resource, 0, sizeof(llvm_resource));
   internal_resource->resource=llvm_newResource();
+  internal_resource->last_error="";
   zend_object_std_init(&internal_resource->zo, class_type TSRMLS_CC);
   zend_hash_copy(internal_resource->zo.properties,
        &class_type->default_properties,

@@ -22,6 +22,7 @@
 #include <llvm/Assembly/Parser.h>
 
 extern "C" {
+  #include "php.h"
   #include "export.h"
 }
 
