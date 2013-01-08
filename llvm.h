@@ -24,5 +24,15 @@
 extern "C" {
   #include "export.h"
 }
+
+class LLVMResource{
+    protected:
+        llvm::LLVMContext context;
+        llvm::ExecutionEngine *ee;
+        llvm::Module *MainModule;
+    public:
+        LLVMResource();
+        ~LLVMResource();
+};
   
 #endif

@@ -5,6 +5,8 @@
 # include "config.h"
 #endif
 
-int load();
+void llvm_init();
+void *llvm_newResource();
+void llvm_freeResource(void*);
 
 #endif

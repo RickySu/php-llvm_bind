@@ -35,11 +35,26 @@ Module *LoadBitCodeFromFile(const char * filename,LLVMContext &context){
     return ParseBitcodeFile(Buffer.get(), context, &error);
 }
 
+void llvm_init()
+{
+    InitializeNativeTarget();
+    llvm_start_multithreaded();
+}
+
+void *llvm_newResource()
+{
+    LLVMResource *Resource = new LLVMResource();
+    return NULL;
+}
+
+void llvm_freeResource(void*Resource)
+{
+    delete (LLVMResource*)Resource;
+}
+
 int load()
 {
     const char * filename="a.bc";
-    InitializeNativeTarget();
-    llvm_start_multithreaded();
     LLVMContext context;
     Module *m = LoadBitCodeFromFile(filename , context);
 //    Module *m = LoadASFromFile(filename , context);

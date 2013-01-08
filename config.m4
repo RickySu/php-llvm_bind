@@ -27,5 +27,5 @@ if test "$PHP_LLVM_BIND" != "no"; then
   PHP_REQUIRE_CXX()
   PHP_SUBST(LLVM_BIND_SHARED_LIBADD)
   PHP_ADD_LIBRARY(stdc++, 1, LLVM_BIND_SHARED_LIBADD) 
-  PHP_NEW_EXTENSION(llvm_bind, llvm_bind.c llvm.cc, $ext_shared)
+  PHP_NEW_EXTENSION(llvm_bind, llvm_bind.c llvm.cc llvm_resource.cc, $ext_shared)
 fi

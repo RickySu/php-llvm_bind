@@ -95,6 +95,7 @@ PHP_MINIT_FUNCTION(llvm_bind)
 	/* If you have INI entries, uncomment these lines
 	REGISTER_INI_ENTRIES();
 	*/
+	llvm_init();
 	initLLVMBindClass(TSRMLS_C);
 	return SUCCESS;
 }
