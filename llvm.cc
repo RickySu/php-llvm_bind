@@ -53,13 +53,31 @@ void llvm_freeResource(LLVMRESOURCE Resource)
     delete (LLVMResource *)Resource;
 }
 
+int llvm_callFunc(LLVMRESOURCE _Resource,const char *name,size_t name_length,char *errormsg,size_t errormsg_size)
+{    
+    std::string funcName,errorMessage;
+    SMDiagnostic error;
+    Module *m;
+    funcName.assign(name,name_length);
+    LLVMResource *Resource = (LLVMResource *) _Resource;
+    ExecutionEngine *ee = Resource->getExecutionEngine();
+    
+    Function* func = ee->FindFunctionNamed(funcName.c_str());
+    if(func==NULL){
+        return false;
+    }
+    void(*call)()=(void(*)())ee->getPointerToFunction(func);
+    call();
+    return true;
+}
+
 size_t llvm_compileAssembly(LLVMRESOURCE _Resource,char *Buffer,size_t size,char *Output,size_t output_size,char *errormsg,size_t errormsg_size)
 {    
     std::string str,bitcodeString,errorMessage;    
     SMDiagnostic error;
     Module *m;
     LLVMResource *Resource = (LLVMResource *) _Resource;
-
+    
     MemoryBuffer *Mem=MemoryBuffer::getMemBuffer(StringRef(Buffer,size),"",false);
     m=ParseAssembly(Mem, 0, error, Resource->getContext());
     if(m==NULL){

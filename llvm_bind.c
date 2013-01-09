@@ -41,12 +41,19 @@ ZEND_BEGIN_ARG_INFO(arginfo_llvm_bind_compileAssembly, 0)
 ZEND_END_ARG_INFO()
 /* }}} */
 
+/* {{{ arginfo */
+ZEND_BEGIN_ARG_INFO(arginfo_llvm_bind_execute, 0)
+    ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO()
+/* }}} */
+
 /* {{{ llvm_bind_methods[]
  *
  * Every user visible function must have an entry in llvm_bind_functions[].
  */
 const zend_function_entry llvm_bind_methods[] = {
         PHP_ME(LLVMBind,    __construct,  NULL,    ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+        PHP_ME(LLVMBind,    execute,    arginfo_llvm_bind_execute,  ZEND_ACC_PUBLIC)
         PHP_ME(LLVMBind,    compileAssembly,    arginfo_llvm_bind_compileAssembly,  ZEND_ACC_PUBLIC)
         PHP_ME(LLVMBind,    getLastError,    NULL,  ZEND_ACC_PUBLIC)
         PHP_ME(LLVMBind,    loadBitcode,    arginfo_llvm_bind_loadBitcode,  ZEND_ACC_PUBLIC)
@@ -181,7 +188,32 @@ PHP_METHOD(LLVMBind, loadBitcode)
 }
 /*}}}*/
 
-/* {{{ proto bool LLVMBind::compileAssembly($assembly) */
+/* {{{ proto boolean LLVMBind::execute($name) */
+PHP_METHOD(LLVMBind, execute)
+{
+    char *name;
+    int  name_len;
+    zval *object = getThis();
+    llvm_resource *internal_resource;
+    
+    internal_resource = (llvm_resource *)zend_object_store_get_object(object TSRMLS_CC);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &name_len)) {
+        return;
+    }
+    
+    if(name_len==0){
+        RETURN_FALSE
+    }
+    
+    if(llvm_callFunc(internal_resource->resource,name,name_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE)>0){
+        RETURN_TRUE;
+    }
+
+    RETURN_FALSE;
+}
+/*}}}*/
+
+/* {{{ proto string LLVMBind::compileAssembly($assembly) */
 PHP_METHOD(LLVMBind, compileAssembly)
 {
     char *assembly, *bitcode;

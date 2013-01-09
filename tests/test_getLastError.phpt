@@ -1,5 +1,5 @@
 --TEST--
-Check Class Constructor
+test Method getLastError
 --FILE--
 <?php
 $LLVMBind=new LLVMBind();

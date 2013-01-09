@@ -1,5 +1,5 @@
 --TEST--
-Check Class Constructor
+test Method loadBitcode
 --FILE--
 <?php
 $LLVMBind=new LLVMBind();

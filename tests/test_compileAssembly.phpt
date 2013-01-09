@@ -1,5 +1,5 @@
 --TEST--
-Check Class Constructor
+test Method compileAssembly
 --FILE--
 <?php
 $LLVMBind=new LLVMBind();
