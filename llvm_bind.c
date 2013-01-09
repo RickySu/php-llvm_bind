@@ -261,18 +261,24 @@ void initLLVMBindClass(TSRMLS_D)
 zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {
   zend_object_value retval;
   llvm_resource *internal_resource;
+#if PHP_VERSION_ID < 50399  
   zval *tmp;
+#endif
   internal_resource = (llvm_resource *) emalloc(sizeof(llvm_resource));
   memset(internal_resource, 0, sizeof(llvm_resource));
   internal_resource->resource=llvm_newResource();
   internal_resource->last_error=emalloc(ERROR_MESSAG_BUFFER_SIZE);
   memset(internal_resource->last_error, 0, ERROR_MESSAG_BUFFER_SIZE);
   zend_object_std_init(&internal_resource->zo, class_type TSRMLS_CC);
+#if PHP_VERSION_ID < 50399
   zend_hash_copy(internal_resource->zo.properties,
        &class_type->default_properties,
        (copy_ctor_func_t) zval_property_ctor,
        (void *) &tmp,
        sizeof(zval *));
+#else
+  object_properties_init(&internal_resource->zo, class_type);
+#endif
   retval.handle = zend_objects_store_put(internal_resource,(zend_objects_store_dtor_t) zend_objects_destroy_object,free_llvm_resource, NULL TSRMLS_CC);
   retval.handlers = zend_get_std_object_handlers();
   return retval;
