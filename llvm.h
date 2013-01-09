@@ -5,8 +5,10 @@
 # include "config.h"
 #endif
 
+#include "default.h"
+
 #include <string>
-#include <memory>
+#include <sstream>
 #include <iostream>
 
 #include <llvm/LLVMContext.h>
@@ -22,7 +24,6 @@
 #include <llvm/Assembly/Parser.h>
 
 extern "C" {
-  #include "php.h"
   #include "export.h"
 }
 

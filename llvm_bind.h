@@ -9,8 +9,8 @@
 # include "TSRM.h"
 #endif
 
+#include "default.h"
 #include "php.h"
-
 #include "export.h"
 
 PHP_MINIT_FUNCTION(llvm_bind);

@@ -4,7 +4,7 @@
 typedef struct _llvm_resource{
     zend_object zo;
     LLVMRESOURCE resource;
-    const char * last_error;
+    char * last_error;
 } llvm_resource;
 
 #endif

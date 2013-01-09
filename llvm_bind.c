@@ -166,7 +166,7 @@ PHP_METHOD(LLVMBind, __construct)
 PHP_METHOD(LLVMBind, loadBitcode)
 {
     char *bitcode;
-    size_t bitcode_len;
+    int  bitcode_len;
     zval *object = getThis();
     llvm_resource *internal_resource;
     
@@ -174,7 +174,7 @@ PHP_METHOD(LLVMBind, loadBitcode)
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &bitcode, &bitcode_len)) {
         return;
     }
-    if(llvm_loadBitcode(internal_resource->resource,bitcode,bitcode_len,&internal_resource->last_error)>0){
+    if(llvm_loadBitcode(internal_resource->resource,bitcode,bitcode_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE)==0){
         RETURN_FALSE;
     }
     RETURN_TRUE;
@@ -185,7 +185,7 @@ PHP_METHOD(LLVMBind, loadBitcode)
 PHP_METHOD(LLVMBind, compileAssembly)
 {
     char *assembly, *bitcode;
-    size_t assembly_len,bitcode_len;
+    int assembly_len,bitcode_len,bitcode_buffer_len;
     zval *object = getThis();
     llvm_resource *internal_resource;
     
@@ -193,11 +193,17 @@ PHP_METHOD(LLVMBind, compileAssembly)
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &assembly, &assembly_len)) {
         return;
     }
-    if((bitcode_len=llvm_compileAssembly(internal_resource->resource,assembly,assembly_len,&bitcode,&internal_resource->last_error))>0){
-        RETVAL_STRINGL(bitcode,bitcode_len,1);
+
+    bitcode_buffer_len = assembly_len * 3;
+    bitcode = emalloc(bitcode_buffer_len);
+
+    if((bitcode_len=llvm_compileAssembly(internal_resource->resource,assembly,assembly_len,bitcode,bitcode_buffer_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE))>0){
+       RETVAL_STRINGL(bitcode,bitcode_len,1);
         efree(bitcode);
         return;
     }
+
+    efree(bitcode);    
     RETURN_FALSE;
 }
 /*}}}*/
@@ -227,7 +233,8 @@ zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {
   internal_resource = (llvm_resource *) emalloc(sizeof(llvm_resource));
   memset(internal_resource, 0, sizeof(llvm_resource));
   internal_resource->resource=llvm_newResource();
-  internal_resource->last_error="";
+  internal_resource->last_error=emalloc(ERROR_MESSAG_BUFFER_SIZE);
+  memset(internal_resource->last_error, 0, ERROR_MESSAG_BUFFER_SIZE);
   zend_object_std_init(&internal_resource->zo, class_type TSRMLS_CC);
   zend_hash_copy(internal_resource->zo.properties,
        &class_type->default_properties,
@@ -243,5 +250,6 @@ void free_llvm_resource(void *object TSRMLS_DC){
   llvm_resource *internal_resource=(llvm_resource *) object;
   llvm_freeResource(internal_resource->resource);
   zend_object_std_dtor(&internal_resource->zo);
+  efree(internal_resource->last_error);
   efree(internal_resource);
 }
