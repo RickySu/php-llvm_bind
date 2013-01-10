@@ -22,3 +22,8 @@ ExecutionEngine *LLVMResource::getExecutionEngine()
 {
     return ee;
 }
+
+bool LLVMResource::LinkModule(llvm::Module *Module,std::string *ErrorMsg)
+{
+     return Linker::LinkModules(MainModule,Module,0,ErrorMsg);
+}

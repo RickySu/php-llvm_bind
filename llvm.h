@@ -22,6 +22,7 @@
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Assembly/Parser.h>
+#include <llvm/Linker.h>
 
 extern "C" {
   #include "export.h"
@@ -35,7 +36,8 @@ class LLVMResource{
     public:
         LLVMResource();
         llvm::LLVMContext &getContext();
-        llvm::ExecutionEngine *getExecutionEngine();        
+        llvm::ExecutionEngine *getExecutionEngine();
+        bool LinkModule(llvm::Module *Module,std::string *ErrorMsg);
         ~LLVMResource();
 };
   

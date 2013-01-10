@@ -109,6 +109,10 @@ int llvm_loadBitcode(LLVMRESOURCE _Resource,char *Buffer,size_t size,char *error
         error.copy(errormsg,errormsg_size);
         return 0;
     }
-    ee->addModule(m);
+    if(Resource->LinkModule(m,&error)){
+        error.copy(errormsg,errormsg_size);
+        return 0;    
+    }
+    //ee->addModule(m);
     return 1;
 }

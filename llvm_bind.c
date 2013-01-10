@@ -227,6 +227,9 @@ PHP_METHOD(LLVMBind, compileAssembly)
     }
 
     bitcode_buffer_len = assembly_len * 3;
+    if(bitcode_buffer_len<BITCODE_MIN_BUFFER_SIZE){
+        bitcode_buffer_len=BITCODE_MIN_BUFFER_SIZE;
+    }
     bitcode = emalloc(bitcode_buffer_len);
 
     if((bitcode_len=llvm_compileAssembly(internal_resource->resource,assembly,assembly_len,bitcode,bitcode_buffer_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE))>0){
