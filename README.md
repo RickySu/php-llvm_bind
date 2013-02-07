@@ -41,7 +41,7 @@ if($Bitcode===false){
 ### Load llvm compiled bitcode
 
 ```php
-<?php 
+<?php
 $LLVMBind=new LLVMBind();
 if(!$LLVMBind->loadBitcode($Bitcode)){
     echo $LLVMBind->getLastError();
@@ -73,7 +73,7 @@ declare i32 @printf(i8*, ...)
 EOT;
 
 $LLVMBind=new LLVMBind();
-$Bitcode=$LLVMBind->compileAssembly($Assembly);
+$Bitcode=$LLVMBind->compileAssembly($Assembly,$optimize_level=3);
 $LLVMBind->loadBitcode($Bitcode);
 $LLVMBind->execute('main');
 ```

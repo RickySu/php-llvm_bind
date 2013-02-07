@@ -23,6 +23,11 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Assembly/Parser.h>
 #include <llvm/Linker.h>
+#include <llvm/PassManager.h>
+#include <llvm/Target/TargetData.h>
+#include <llvm/LinkAllPasses.h>
+#include <llvm/Analysis/Verifier.h>
+#include "llvm_opt.h"
 
 extern "C" {
   #include "export.h"
@@ -40,5 +45,5 @@ class LLVMResource{
         bool LinkModule(llvm::Module *Module,std::string *ErrorMsg);
         ~LLVMResource();
 };
-  
+
 #endif

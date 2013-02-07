@@ -5,7 +5,7 @@ using namespace llvm;
 LLVMResource::LLVMResource()
 {
     MainModule=new Module("main",context);
-    ee=ExecutionEngine::createJIT(MainModule);
+    ee=ExecutionEngine::createJIT(MainModule,0,0,CodeGenOpt::Aggressive);
 }
 
 LLVMResource::~LLVMResource()

@@ -1,5 +1,4 @@
 #include "llvm.h"
-
 using namespace std;
 using namespace llvm;
 
@@ -14,28 +13,6 @@ void MakeErrorInfo(SMDiagnostic& err,std::string &output)
     output = stringStream.str();
 }
 
-/*
-Module *LoadASFromFile(const char * filename,LLVMContext &context){
-    string bcfile(filename);
-    bcfile=bcfile+".bc";
-    SMDiagnostic error;
-    OwningPtr<MemoryBuffer> Buffer;
-    MemoryBuffer::getFile(filename, Buffer);                                                                                    
-    Module *m=ParseAssembly(Buffer.take(),0, error, context);
-    std::string ErrorInfo;
-    raw_fd_ostream os(bcfile.c_str(), ErrorInfo);
-    WriteBitcodeToFile(m, os);
-    displayErrorInfo(error);
-    return m;
-}
-
-Module *LoadBitCodeFromFile(const char * filename,LLVMContext &context){
-    string error;    
-    OwningPtr<MemoryBuffer> Buffer;
-    MemoryBuffer::getFile(filename, Buffer);                                                                                    
-    return ParseBitcodeFile(Buffer.get(), context, &error);
-}
-*/
 void llvm_init()
 {
     InitializeNativeTarget();
@@ -54,14 +31,14 @@ void llvm_freeResource(LLVMRESOURCE Resource)
 }
 
 int llvm_callFunc(LLVMRESOURCE _Resource,const char *name,size_t name_length,char *errormsg,size_t errormsg_size)
-{    
+{
     std::string funcName,errorMessage;
     SMDiagnostic error;
     Module *m;
     funcName.assign(name,name_length);
     LLVMResource *Resource = (LLVMResource *) _Resource;
     ExecutionEngine *ee = Resource->getExecutionEngine();
-    
+
     Function* func = ee->FindFunctionNamed(funcName.c_str());
     if(func==NULL){
         return false;
@@ -71,13 +48,13 @@ int llvm_callFunc(LLVMRESOURCE _Resource,const char *name,size_t name_length,cha
     return true;
 }
 
-size_t llvm_compileAssembly(LLVMRESOURCE _Resource,char *Buffer,size_t size,char *Output,size_t output_size,char *errormsg,size_t errormsg_size)
-{    
-    std::string str,bitcodeString,errorMessage;    
+size_t llvm_compileAssembly(LLVMRESOURCE _Resource,char *Buffer,size_t size,char *Output,size_t output_size,char *errormsg,size_t errormsg_size,int optimize_level)
+{
+    std::string str,bitcodeString,errorMessage;
     SMDiagnostic error;
     Module *m;
     LLVMResource *Resource = (LLVMResource *) _Resource;
-    
+
     MemoryBuffer *Mem=MemoryBuffer::getMemBuffer(StringRef(Buffer,size),"",false);
     m=ParseAssembly(Mem, 0, error, Resource->getContext());
     if(m==NULL){
@@ -85,6 +62,9 @@ size_t llvm_compileAssembly(LLVMRESOURCE _Resource,char *Buffer,size_t size,char
         errorMessage.copy(errormsg,errormsg_size);
         return 0;
     }
+
+    optimizeModule(m,optimize_level);
+
     raw_string_ostream stream(str);
     WriteBitcodeToFile(m,stream);
     bitcodeString=stream.str();
@@ -111,8 +91,8 @@ int llvm_loadBitcode(LLVMRESOURCE _Resource,char *Buffer,size_t size,char *error
     }
     if(Resource->LinkModule(m,&error)){
         error.copy(errormsg,errormsg_size);
-        return 0;    
+        return 0;
     }
-    //ee->addModule(m);
+
     return 1;
 }
