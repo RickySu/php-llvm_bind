@@ -24,11 +24,15 @@ PHP_METHOD(LLVMBind, compileAssembly);
 PHP_METHOD(LLVMBind, execute);
 PHP_METHOD(LLVMBind, getLastError);
 PHP_METHOD(LLVMBind, loadBitcode);
+PHP_METHOD(LLVMBind, registCallback);
 
+void triggerCallback(void *obj, int callbackIndex, int len, char *message);
 
 void initLLVMBindClass(TSRMLS_D);
 zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC);
 void free_llvm_resource(void *object TSRMLS_DC);
+void setTriggerCallbackEntryPoint(void *object);
+
 extern zend_module_entry zmq_module_entry;
 
 

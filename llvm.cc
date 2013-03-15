@@ -27,6 +27,17 @@ void llvm_freeResource(LLVMRESOURCE Resource) {
 }
 
 int llvm_callFunc(LLVMRESOURCE _Resource, const char *name, size_t name_length, char *errormsg, size_t errormsg_size) {
+    void(*call)();
+    call = llvm_getFunc(_Resource, name, name_length, errormsg, errormsg_size);
+    if(call == NULL){
+        return false;
+    }
+    call();
+    return true;
+}
+
+fCall_t llvm_getFunc(LLVMRESOURCE _Resource, const char *name, size_t name_length, char *errormsg, size_t errormsg_size){
+    fCall_t call;
     std::string funcName, errorMessage;
     SMDiagnostic error;
     Module *m;
@@ -36,11 +47,10 @@ int llvm_callFunc(LLVMRESOURCE _Resource, const char *name, size_t name_length, 
 
     Function* func = ee->FindFunctionNamed(funcName.c_str());
     if (func == NULL) {
-        return false;
+        return NULL;
     }
-    void(*call)() = (void(*)())ee->getPointerToFunction(func);
-    call();
-    return true;
+    call = (fCall_t) ee->getPointerToFunction(func);
+    return call;
 }
 
 size_t llvm_compileAssembly(LLVMRESOURCE _Resource, char *Buffer, size_t size, char *Output, size_t output_size, char *errormsg, size_t errormsg_size, int optimize_level) {

@@ -43,6 +43,13 @@ ZEND_END_ARG_INFO()
 /* }}} */
 
 /* {{{ arginfo */
+ZEND_BEGIN_ARG_INFO(arginfo_llvm_bind_regist_callback, 0)
+    ZEND_ARG_INFO(0, callback_index)
+    ZEND_ARG_INFO(0, callback)
+ZEND_END_ARG_INFO()
+/* }}} */
+
+/* {{{ arginfo */
 ZEND_BEGIN_ARG_INFO(arginfo_llvm_bind_execute, 0)
     ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO()
@@ -58,6 +65,7 @@ const zend_function_entry llvm_bind_methods[] = {
         PHP_ME(LLVMBind,    compileAssembly,    arginfo_llvm_bind_compileAssembly,  ZEND_ACC_PUBLIC)
         PHP_ME(LLVMBind,    getLastError,    NULL,  ZEND_ACC_PUBLIC)
         PHP_ME(LLVMBind,    loadBitcode,    arginfo_llvm_bind_loadBitcode,  ZEND_ACC_PUBLIC)
+        PHP_ME(LLVMBind,    registCallback, arginfo_llvm_bind_regist_callback,  ZEND_ACC_PUBLIC)
 	PHP_FE_END	/* Must be the last line in llvm_bind_functions[] */
 };
 /* }}} */
@@ -167,6 +175,7 @@ PHP_MINFO_FUNCTION(llvm_bind)
 /* {{{ proto bool LLVMBind::__construct() */
 PHP_METHOD(LLVMBind, __construct)
 {
+
 }
 /*}}}*/
 
@@ -185,6 +194,40 @@ PHP_METHOD(LLVMBind, loadBitcode)
     if(llvm_loadBitcode(internal_resource->resource,bitcode,bitcode_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE)==0){
         RETURN_FALSE;
     }
+
+    RETURN_TRUE;
+}
+/*}}}*/
+
+
+/* {{{ proto bool LLVMBind::registCallback($index, $callback) */
+PHP_METHOD(LLVMBind, registCallback)
+{
+    long callbackIndex;
+    zval *zCallback;
+    char *callbzckFunctionName;
+    zval *object = getThis();
+    llvm_resource *internal_resource;
+
+    internal_resource = (llvm_resource *)zend_object_store_get_object(object TSRMLS_CC);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lz", &callbackIndex, &zCallback)) {
+        return;
+    }
+
+    if (!zend_is_callable(zCallback, 0, &callbzckFunctionName TSRMLS_CC)) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING, "'%s' is not a valid callback", callbzckFunctionName);
+        efree(callbzckFunctionName);
+        RETURN_FALSE;
+    }        
+    efree(callbzckFunctionName);
+    zval_add_ref(&zCallback);
+    
+    if(internal_resource->callback[callbackIndex]){
+        zval_ptr_dtor(&internal_resource->callback[callbackIndex]);
+    }
+    
+    internal_resource->callback[callbackIndex] = zCallback;
+    setTriggerCallbackEntryPoint((void*)object);    
     RETURN_TRUE;
 }
 /*}}}*/
@@ -271,7 +314,7 @@ zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {
 #if PHP_VERSION_ID < 50399
   zval *tmp;
 #endif
-  internal_resource = (llvm_resource *) emalloc(sizeof(llvm_resource));
+  internal_resource = (llvm_resource *) ecalloc(1,sizeof(llvm_resource));
   memset(internal_resource, 0, sizeof(llvm_resource));
   internal_resource->resource=llvm_newResource();
   internal_resource->last_error=emalloc(ERROR_MESSAG_BUFFER_SIZE);
@@ -294,7 +337,38 @@ zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {
 void free_llvm_resource(void *object TSRMLS_DC){
   llvm_resource *internal_resource=(llvm_resource *) object;
   llvm_freeResource(internal_resource->resource);
-  zend_object_std_dtor(&internal_resource->zo);
+  zend_object_std_dtor(&internal_resource->zo TSRMLS_CC);
   efree(internal_resource->last_error);
   efree(internal_resource);
+}
+
+void triggerCallback(void *object, int callbackIndex, int len, char *message){
+    zval *data;
+    zval *args[1];
+    zval retval;
+    llvm_resource *internal_resource;
+    internal_resource = (llvm_resource *)zend_object_store_get_object((zval *)object TSRMLS_CC);
+    MAKE_STD_ZVAL(data);
+    ZVAL_STRINGL(data, message, len, 1);
+    printf("call back triggered!\n");
+    args[0] = data;
+    if(internal_resource->callback[callbackIndex]){
+        if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, 1, args TSRMLS_CC) == SUCCESS) {
+            zval_dtor(&retval);
+        }
+    }
+    zval_dtor(&retval);
+    zval_ptr_dtor(&(args[0]));
+}
+
+void setTriggerCallbackEntryPoint(void *object){
+    char *name="LLVMBind_stTriggerCallbackEntryPointet";
+    int  name_len=strlen(name);
+    llvm_resource *internal_resource;
+    fCall_t call;
+    internal_resource = (llvm_resource *)zend_object_store_get_object((zval *)object TSRMLS_CC);
+    call = llvm_getFunc(internal_resource->resource,name,name_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE);
+    if(call){
+        call(object, triggerCallback);
+    }
 }
