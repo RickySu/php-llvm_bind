@@ -227,7 +227,7 @@ PHP_METHOD(LLVMBind, registCallback)
     }
     
     internal_resource->callback[callbackIndex] = zCallback;
-    setTriggerCallbackEntryPoint((void*)object);    
+    setTriggerCallbackEntryPoint((void*)internal_resource);
     RETURN_TRUE;
 }
 /*}}}*/
@@ -334,7 +334,7 @@ zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {
   return retval;
 }
 
-void free_llvm_resource(void *object TSRMLS_DC){
+void free_llvm_resource(void *object TSRMLS_CC){
   llvm_resource *internal_resource=(llvm_resource *) object;
   llvm_freeResource(internal_resource->resource);
   zend_object_std_dtor(&internal_resource->zo TSRMLS_CC);
@@ -346,14 +346,13 @@ void triggerCallback(void *object, int callbackIndex, int len, char *message){
     zval *data;
     zval *args[1];
     zval retval;
-    llvm_resource *internal_resource;
-    internal_resource = (llvm_resource *)zend_object_store_get_object((zval *)object TSRMLS_CC);
+    llvm_resource *internal_resource=(llvm_resource *) object;
     MAKE_STD_ZVAL(data);
     ZVAL_STRINGL(data, message, len, 1);
     printf("call back triggered!\n");
     args[0] = data;
     if(internal_resource->callback[callbackIndex]){
-        if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, 1, args TSRMLS_CC) == SUCCESS) {
+        if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, 1, args) == SUCCESS) {
             zval_dtor(&retval);
         }
     }
@@ -364,9 +363,8 @@ void triggerCallback(void *object, int callbackIndex, int len, char *message){
 void setTriggerCallbackEntryPoint(void *object){
     char *name="LLVMBind_stTriggerCallbackEntryPointet";
     int  name_len=strlen(name);
-    llvm_resource *internal_resource;
+    llvm_resource *internal_resource=(llvm_resource *)object;
     fCall_t call;
-    internal_resource = (llvm_resource *)zend_object_store_get_object((zval *)object TSRMLS_CC);
     call = llvm_getFunc(internal_resource->resource,name,name_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE);
     if(call){
         call(object, triggerCallback);
