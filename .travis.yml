@@ -5,5 +5,5 @@ php:
 before_script:
   - sudo apt-get install llvm-3.0 llvm-3.0-dev llvm-3.0-runtime
   - phpize
-  - ./configure --with-llvm-config=/usr/bin/llvm-config-3.0 --enable-defult-callback
+  - ./configure --with-llvm-config=/usr/bin/llvm-config-3.0 --enable-default-callback
 script: echo 'n'|make test

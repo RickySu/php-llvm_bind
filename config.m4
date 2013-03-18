@@ -1,9 +1,9 @@
 dnl $Id$
 dnl config.m4 for extension llvm_bind
 
-AC_ARG_ENABLE(defult-callback,
-  AC_HELP_STRING([--enable-defult-callback], [Enable default callback for triggerCallback]),
-  AC_DEFINE(USE_DEFAULT_CALLBACK, 1, [use defaule callback])  
+AC_ARG_ENABLE(default-callback,
+  AC_HELP_STRING([--enable-default-callback], [Enable default callback for triggerCallback]),
+  AC_DEFINE(USE_DEFAULT_CALLBACK, 1, [use default callback])  
 )
 
 PHP_ARG_WITH(clang, clang path, [  --with-clang=[PATH]    llvm config path.[/usr/bin/clang]])
