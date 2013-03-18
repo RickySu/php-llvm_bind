@@ -17,8 +17,10 @@
 */
 
 /* $Id$ */
+#include <stdarg.h>
 #include "llvm_bind.h"
 #include "llvm_bind_struct.h"
+#include "bitcode/triggerCallback.s.c"
 
 /* If you declare any globals in php_llvm_bind.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(llvm_bind)
@@ -283,7 +285,7 @@ PHP_METHOD(LLVMBind, compileAssembly)
     bitcode = emalloc(bitcode_buffer_len);
 
     if((bitcode_len=llvm_compileAssembly(internal_resource->resource,assembly,assembly_len,bitcode,bitcode_buffer_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE,optimize_level))>0){
-       RETVAL_STRINGL(bitcode,bitcode_len,1);
+        RETVAL_STRINGL(bitcode,bitcode_len,1);
         efree(bitcode);
         return;
     }
@@ -345,15 +347,68 @@ void free_llvm_resource(void *object TSRMLS_DC){
   efree(internal_resource);
 }
 
-void triggerCallback(void *object, int callbackIndex, int len, char *message){
+void freeArgs(int nArgs, zval **args){
+    int i;
+    for(i=0;i<nArgs;i++){
+        if(args[i]){
+            zval_dtor(args[i]);
+        }
+    }
+    efree(args);
+}
+
+void triggerCallback(void *object, int callbackIndex, const char *argsDefine, ...){
     TSRMLS_D;
-    zval *data;
-    zval *args[1];
+    va_list ap;
+    int nArgs, i;
+    zval **args;
     zval retval;
+    long lval;
+    double dval;
+    char *str;    
     llvm_resource *internal_resource=(llvm_resource *) object;
 #ifdef ZTS
     TSRMLS_C = internal_resource->TSRMLS_C;
-#endif    
+#endif
+    nArgs=strlen(argsDefine);
+    args=ecalloc(nArgs,sizeof(zval*));
+    va_start(ap, argsDefine);
+    for(i=0;i<nArgs;i++){
+        MAKE_STD_ZVAL(args[i]);
+        switch(argsDefine[i]){
+            case 'b':    //boolean
+                lval = va_arg(ap, long);
+                ZVAL_BOOLEAN(args[i], lval != 0);
+                break;
+            case 'l':    //integer
+                lval = va_arg(ap, long);
+                ZVAL_INTEGER(args[i], lval);
+                break;
+            case 'd':    //floating point
+                dval = va_arg(ap, double);
+                ZVAL_DOUBLE(args[i], dval);
+                break;
+            case 's':    //string
+                lval = va_arg(ap, long);
+                str = va_arg(ap, char *);
+                ZVAL_STRINGL(args[i], str, lval, 1);
+                break;            
+            default:
+                php_error_docref(NULL TSRMLS_CC, E_WARNING, "'%c' is not a valid param define!", argsDefine[i]);
+                freeArgs(nArgs, args);
+                return;
+        }
+    }
+    va_end(ap);
+    
+    if(internal_resource->callback[callbackIndex]){
+        if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, nArgs, args TSRMLS_CC) == SUCCESS) {
+            zval_dtor(&retval);
+        }
+    }
+    zval_dtor(&retval);
+    
+    /*
     MAKE_STD_ZVAL(data);
     ZVAL_STRINGL(data, message, len, 1);
     printf("call back triggered!\n");
@@ -365,6 +420,8 @@ void triggerCallback(void *object, int callbackIndex, int len, char *message){
     }
     zval_dtor(&retval);
     zval_ptr_dtor(&(args[0]));
+    */
+    freeArgs(nArgs, args);
 }
 
 void setTriggerCallbackEntryPoint(void *object){

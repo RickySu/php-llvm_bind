@@ -26,7 +26,8 @@ PHP_METHOD(LLVMBind, getLastError);
 PHP_METHOD(LLVMBind, loadBitcode);
 PHP_METHOD(LLVMBind, registCallback);
 
-void triggerCallback(void *obj, int callbackIndex, int len, char *message);
+void freeArgs(int nArgs, zval **args);
+void triggerCallback(void *obj, int callbackIndex, const char *argsDefine, ...);
 
 void initLLVMBindClass(TSRMLS_D);
 zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC);

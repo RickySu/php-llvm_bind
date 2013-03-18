@@ -1,8 +1,20 @@
 dnl $Id$
 dnl config.m4 for extension llvm_bind
 
-PHP_ARG_WITH(llvm-config, llvm config path,
-[  --with-llvm-config=[PATH]    llvm config path.[/usr/bin/llvm-config]])
+PHP_ARG_WITH(clang, clang path, [  --with-clang=[PATH]    llvm config path.[/usr/bin/clang]])
+AC_MSG_CHECKING(for clang)
+for i in $PHP_CLANG /usr/bin/clang /usr/local/bin/clang "";do
+  if test -x $i;then
+    CLANG=$i
+    break
+  fi
+done
+
+if test -z "$CLANG"; then
+  $CLANG -c -O3 -S bitcode/triggerCallback.c -O bitcode/triggerCallback.s
+fi
+
+PHP_ARG_WITH(llvm-config, llvm config path, [  --with-llvm-config=[PATH]    llvm config path.[/usr/bin/llvm-config]])
 
 if test "$PHP_LLVM_BIND" != "no"; then
   AC_MSG_CHECKING(for llvm-config)
@@ -40,6 +52,12 @@ if test "$PHP_LLVM_BIND" != "no"; then
   else
       MODULES="$MODULES llvm_opt_32.cc"
   fi  
+  
+  PHP_EXECUTE=`$PHP_CONFIG --php-binary`
+  
+  if -n PHP_EXECUTE ;then
+      $PHP_EXECUTE bitcode/build.php
+  fi
   
   PHP_NEW_EXTENSION(llvm_bind, $MODULES , $ext_shared)
 fi
