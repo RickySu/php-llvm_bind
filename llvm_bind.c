@@ -17,10 +17,7 @@
 */
 
 /* $Id$ */
-#include <stdarg.h>
 #include "llvm_bind.h"
-#include "llvm_bind_struct.h"
-#include "bitcode/triggerCallback.s.c"
 
 /* If you declare any globals in php_llvm_bind.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(llvm_bind)
@@ -177,9 +174,10 @@ PHP_MINFO_FUNCTION(llvm_bind)
 /* {{{ proto bool LLVMBind::__construct() */
 PHP_METHOD(LLVMBind, __construct)
 {
-
+    
 }
 /*}}}*/
+
 
 /* {{{ proto bool LLVMBind::loadBitcode($bitcode) */
 PHP_METHOD(LLVMBind, loadBitcode)
@@ -196,7 +194,6 @@ PHP_METHOD(LLVMBind, loadBitcode)
     if(llvm_loadBitcode(internal_resource->resource,bitcode,bitcode_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE)==0){
         RETURN_FALSE;
     }
-
     RETURN_TRUE;
 }
 /*}}}*/
@@ -229,10 +226,11 @@ PHP_METHOD(LLVMBind, registCallback)
     }
     
     internal_resource->callback[callbackIndex] = zCallback;
+
 #ifdef ZTS
     internal_resource->TSRMLS_C = TSRMLS_C;
 #endif
-    setTriggerCallbackEntryPoint((void*)internal_resource);
+
     RETURN_TRUE;
 }
 /*}}}*/
@@ -336,6 +334,8 @@ zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {
 #endif
   retval.handle = zend_objects_store_put(internal_resource,(zend_objects_store_dtor_t) zend_objects_destroy_object,free_llvm_resource, NULL TSRMLS_CC);
   retval.handlers = zend_get_std_object_handlers();
+  loadDefaultCallbackBitcode(internal_resource);
+  setTriggerCallbackEntryPoint((void*)internal_resource);
   return retval;
 }
 
@@ -357,9 +357,8 @@ void freeArgs(int nArgs, zval **args){
     efree(args);
 }
 
-void triggerCallback(void *object, int callbackIndex, const char *argsDefine, ...){
+void __triggerCallback(void *object, int callbackIndex, const char *argsDefine, va_list ap){
     TSRMLS_D;
-    va_list ap;
     int nArgs, i;
     zval **args;
     zval retval;
@@ -367,22 +366,25 @@ void triggerCallback(void *object, int callbackIndex, const char *argsDefine, ..
     double dval;
     char *str;    
     llvm_resource *internal_resource=(llvm_resource *) object;
+    
 #ifdef ZTS
     TSRMLS_C = internal_resource->TSRMLS_C;
 #endif
-    nArgs=strlen(argsDefine);
+
+    nArgs=strlen(argsDefine);    
     args=ecalloc(nArgs,sizeof(zval*));
-    va_start(ap, argsDefine);
     for(i=0;i<nArgs;i++){
         MAKE_STD_ZVAL(args[i]);
         switch(argsDefine[i]){
             case 'b':    //boolean
                 lval = va_arg(ap, long);
-                ZVAL_BOOLEAN(args[i], lval != 0);
+                args[i]->value.lval = (lval != 0);
+                args[i]->type = IS_BOOL;
                 break;
             case 'l':    //integer
                 lval = va_arg(ap, long);
-                ZVAL_INTEGER(args[i], lval);
+                args[i]->value.lval = lval;
+                ZVAL_LONG(args[i], lval);
                 break;
             case 'd':    //floating point
                 dval = va_arg(ap, double);
@@ -399,7 +401,6 @@ void triggerCallback(void *object, int callbackIndex, const char *argsDefine, ..
                 return;
         }
     }
-    va_end(ap);
     
     if(internal_resource->callback[callbackIndex]){
         if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, nArgs, args TSRMLS_CC) == SUCCESS) {
@@ -407,7 +408,6 @@ void triggerCallback(void *object, int callbackIndex, const char *argsDefine, ..
         }
     }
     zval_dtor(&retval);
-    
     /*
     MAKE_STD_ZVAL(data);
     ZVAL_STRINGL(data, message, len, 1);
@@ -421,16 +421,32 @@ void triggerCallback(void *object, int callbackIndex, const char *argsDefine, ..
     zval_dtor(&retval);
     zval_ptr_dtor(&(args[0]));
     */
-    freeArgs(nArgs, args);
+    freeArgs(nArgs, args);    
 }
 
 void setTriggerCallbackEntryPoint(void *object){
-    char *name="LLVMBind_stTriggerCallbackEntryPointet";
+    char *name="LLVMBind_setTriggerCallbackEntryPoint";
     int  name_len=strlen(name);
     llvm_resource *internal_resource=(llvm_resource *)object;
     fCall_t call;
     call = llvm_getFunc(internal_resource->resource,name,name_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE);
     if(call){
-        call(object, triggerCallback);
+        call(object, __triggerCallback);
     }
+}
+
+void loadDefaultCallbackBitcode(llvm_resource *internal_resource){
+#ifdef USE_DEFAULT_CALLBACK    
+    int bitcode_len;
+    char *bitcode;
+    int assembly_len = strlen(triggerCallback_ir);
+    int bitcode_buffer_len = assembly_len * 3;
+    if(bitcode_buffer_len<BITCODE_MIN_BUFFER_SIZE){
+        bitcode_buffer_len=BITCODE_MIN_BUFFER_SIZE;
+    }
+    bitcode = emalloc(bitcode_buffer_len);
+    bitcode_len=llvm_compileAssembly((LLVMRESOURCE) internal_resource->resource, triggerCallback_ir, assembly_len, bitcode, bitcode_buffer_len, internal_resource->last_error, ERROR_MESSAG_BUFFER_SIZE, 3);
+    llvm_loadBitcode(internal_resource->resource, bitcode, bitcode_len, internal_resource->last_error, ERROR_MESSAG_BUFFER_SIZE);
+    efree(bitcode);
+#endif    
 }

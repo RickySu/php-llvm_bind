@@ -3,8 +3,9 @@ Test method execute
 --FILE--
 <?php
 $LLVMBind=new LLVMBind();
-$LLVMBind->loadBitcode(file_get_contents(__DIR__."/test_loadBitcode.bc"));
+$bitcode=$LLVMBind->compileAssembly(file_get_contents(__DIR__."/test_loadBitcode.ll"));
+$LLVMBind->loadBitcode($bitcode);
 $LLVMBind->execute('main');    
 ?>
 --EXPECTF--
-OK
+OK!

@@ -3,7 +3,8 @@ test Method loadBitcode
 --FILE--
 <?php
 $LLVMBind=new LLVMBind();
-if($LLVMBind->loadBitcode(file_get_contents(__DIR__."/test_loadBitcode.bc"))){
+$bitcode=$LLVMBind->compileAssembly(file_get_contents(__DIR__."/test_loadBitcode.ll"));
+if($LLVMBind->loadBitcode($bitcode)){
     echo "OK";
 }
 else{

@@ -1,6 +1,11 @@
 dnl $Id$
 dnl config.m4 for extension llvm_bind
 
+AC_ARG_ENABLE(defult-callback,
+  AC_HELP_STRING([--enable-defult-callback], [Enable default callback for triggerCallback]),
+  AC_DEFINE(USE_DEFAULT_CALLBACK, 1, [use defaule callback])  
+)
+
 PHP_ARG_WITH(clang, clang path, [  --with-clang=[PATH]    llvm config path.[/usr/bin/clang]])
 AC_MSG_CHECKING(for clang)
 for i in $PHP_CLANG /usr/bin/clang /usr/local/bin/clang "";do
@@ -46,6 +51,7 @@ if test "$PHP_LLVM_BIND" != "no"; then
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS $LLVM_EXTRA_LDFLAGS"
   LDFLAGS="$LDFLAGS $LLVM_LDFLAGS"
   CXXFLAGS="$CXXFLAGS $LLVM_CXXFLAGS"
+  
   PHP_REQUIRE_CXX()
   PHP_SUBST(LLVM_BIND_SHARED_LIBADD)
   PHP_ADD_LIBRARY(stdc++, 1, LLVM_BIND_SHARED_LIBADD) 
@@ -64,5 +70,3 @@ if test "$PHP_LLVM_BIND" != "no"; then
   
   PHP_NEW_EXTENSION(llvm_bind, $MODULES , $ext_shared)
 fi
-
-
