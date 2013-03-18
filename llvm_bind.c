@@ -337,7 +337,7 @@ zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {
   return retval;
 }
 
-void free_llvm_resource(void *object TSRMLS_CC){
+void free_llvm_resource(void *object TSRMLS_DC){
   llvm_resource *internal_resource=(llvm_resource *) object;
   llvm_freeResource(internal_resource->resource);
   zend_object_std_dtor(&internal_resource->zo TSRMLS_CC);
