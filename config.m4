@@ -20,10 +20,10 @@ if test "$PHP_LLVM_BIND" != "no"; then
   AC_MSG_RESULT([$LLVM_CONFIG])
  
   MODULES="llvm_bind.c llvm.cc llvm_resource.cc"
-    
-  AC_CHECK_HEADER(llvm/Target/TargetData.h, MODULES="$MODULES llvm_opt_30.cc",MODULES="$MODULES llvm_opt_32.cc.cc" )
   
-  LLVM_INCLUDE=`$LLVM_CONFIG --includedir`
+
+    
+  LLVM_INCLUDE=`$LLVM_CONFIG --includedir`  
   LLVM_LDFLAGS=`$LLVM_CONFIG --ldflags`
   LLVM_EXTRA_LDFLAGS=`$LLVM_CONFIG --libs core jit native all`
   LLVM_CXXFLAGS=`$LLVM_CONFIG --cxxflags`
@@ -34,6 +34,13 @@ if test "$PHP_LLVM_BIND" != "no"; then
   PHP_REQUIRE_CXX()
   PHP_SUBST(LLVM_BIND_SHARED_LIBADD)
   PHP_ADD_LIBRARY(stdc++, 1, LLVM_BIND_SHARED_LIBADD) 
+  
+  if test -f "$LLVM_INCLUDE/llvm/Target/TargetData.h" ;then
+      MODULES="$MODULES llvm_opt_30.cc"
+  else
+      MODULES="$MODULES llvm_opt_32.cc"
+  fi  
+  
   PHP_NEW_EXTENSION(llvm_bind, $MODULES , $ext_shared)
 fi
 
