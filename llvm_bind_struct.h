@@ -6,6 +6,7 @@ typedef struct _llvm_resource{
     LLVMRESOURCE resource;
     char * last_error;
     zval *callback[20];
+    TSRMLS_D;
 } llvm_resource;
 
 #endif

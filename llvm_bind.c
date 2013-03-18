@@ -227,6 +227,9 @@ PHP_METHOD(LLVMBind, registCallback)
     }
     
     internal_resource->callback[callbackIndex] = zCallback;
+#ifdef ZTS
+    internal_resource->TSRMLS_C = TSRMLS_C;
+#endif
     setTriggerCallbackEntryPoint((void*)internal_resource);
     RETURN_TRUE;
 }
@@ -352,7 +355,11 @@ void triggerCallback(void *object, int callbackIndex, int len, char *message){
     printf("call back triggered!\n");
     args[0] = data;
     if(internal_resource->callback[callbackIndex]){
+#ifdef ZTS        
+        if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, 1, args, internal_resource->TSRMLS_C) == SUCCESS) {
+#else
         if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, 1, args) == SUCCESS) {
+#endif        
             zval_dtor(&retval);
         }
     }
