@@ -16,6 +16,13 @@ if test "$PHP_LLVM_BIND" != "no"; then
   if test -z "$LLVM_CONFIG"; then
     AC_MSG_ERROR(Cannot find llvm-config.Please specify correct llvm-config installation path. )
   fi
+  
+  AC_MSG_RESULT([$LLVM_CONFIG])
+ 
+  MODULES="llvm_bind.c llvm.cc llvm_resource.cc"
+    
+  AC_CHECK_HEADER(llvm/Target/TargetData.h, MODULES="$MODULES llvm_opt_30.cc",MODULES="$MODULES llvm_opt_32.cc.cc" )
+  
   LLVM_INCLUDE=`$LLVM_CONFIG --includedir`
   LLVM_LDFLAGS=`$LLVM_CONFIG --ldflags`
   LLVM_EXTRA_LDFLAGS=`$LLVM_CONFIG --libs core jit native all`
@@ -27,5 +34,7 @@ if test "$PHP_LLVM_BIND" != "no"; then
   PHP_REQUIRE_CXX()
   PHP_SUBST(LLVM_BIND_SHARED_LIBADD)
   PHP_ADD_LIBRARY(stdc++, 1, LLVM_BIND_SHARED_LIBADD) 
-  PHP_NEW_EXTENSION(llvm_bind, llvm_bind.c llvm.cc llvm_opt.cc llvm_resource.cc, $ext_shared)
+  PHP_NEW_EXTENSION(llvm_bind, $MODULES , $ext_shared)
 fi
+
+

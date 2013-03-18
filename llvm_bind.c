@@ -346,20 +346,20 @@ void free_llvm_resource(void *object TSRMLS_DC){
 }
 
 void triggerCallback(void *object, int callbackIndex, int len, char *message){
+    TSRMLS_D;
     zval *data;
     zval *args[1];
     zval retval;
     llvm_resource *internal_resource=(llvm_resource *) object;
+#ifdef ZTS
+    TSRMLS_C = internal_resource->TSRMLS_C;
+#endif    
     MAKE_STD_ZVAL(data);
     ZVAL_STRINGL(data, message, len, 1);
     printf("call back triggered!\n");
     args[0] = data;
     if(internal_resource->callback[callbackIndex]){
-#ifdef ZTS        
-        if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, 1, args, internal_resource->TSRMLS_C) == SUCCESS) {
-#else
-        if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, 1, args) == SUCCESS) {
-#endif        
+        if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, 1, args TSRMLS_CC) == SUCCESS) {
             zval_dtor(&retval);
         }
     }
