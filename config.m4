@@ -10,8 +10,11 @@ for i in $PHP_CLANG /usr/bin/clang /usr/local/bin/clang "";do
   fi
 done
 
-if test -z "$CLANG"; then
-  $CLANG -c -O3 -S bitcode/triggerCallback.c -O bitcode/triggerCallback.s
+if test -n "$CLANG"; then
+  AC_MSG_RESULT([$CLANG])
+  $CLANG -emit-llvm -O3 -S -c bitcode/triggerCallback.c -o bitcode/triggerCallback.s
+else
+  AC_MSG_RESULT(no)
 fi
 
 PHP_ARG_WITH(llvm-config, llvm config path, [  --with-llvm-config=[PATH]    llvm config path.[/usr/bin/llvm-config]])
@@ -55,7 +58,7 @@ if test "$PHP_LLVM_BIND" != "no"; then
   
   PHP_EXECUTE=`$PHP_CONFIG --php-binary`
   
-  if -n PHP_EXECUTE ;then
+  if test -n "$PHP_EXECUTE" ;then
       $PHP_EXECUTE bitcode/build.php
   fi
   
