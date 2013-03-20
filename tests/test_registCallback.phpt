@@ -3,7 +3,7 @@ test registCallback
 --FILE--
 <?php
 function test($boolean, $integer, $double){
-    echo "$boolean, $integer, $double\n";
+    return "result:$boolean, $integer, $double\n";
 }
 
 $LLVMBind=new LLVMBind();
@@ -20,4 +20,4 @@ $LLVMBind->execute('main');
 ?>
 --EXPECTF--
 OK
-1, 10, 1.2
+result:1, 10, 1.2

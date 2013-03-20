@@ -357,7 +357,7 @@ void freeArgs(int nArgs, zval **args){
     efree(args);
 }
 
-void __triggerCallback(void *object, int callbackIndex, const char *argsDefine, va_list ap){
+void __triggerCallback(void *object, simple_value *retvalue, int callbackIndex, const char *argsDefine, va_list ap){
     TSRMLS_D;
     int nArgs, i;
     zval **args;
@@ -404,23 +404,29 @@ void __triggerCallback(void *object, int callbackIndex, const char *argsDefine, 
     
     if(internal_resource->callback[callbackIndex]){
         if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, nArgs, args TSRMLS_CC) == SUCCESS) {
-            zval_dtor(&retval);
+            if(retvalue){
+                retvalue->type = retval.type;
+                switch(retval.type){
+                    case IS_LONG:
+                    case IS_BOOL:                        
+                        retvalue->value.lval = retval.value.lval;
+                        break;
+                    case IS_DOUBLE:
+                        retvalue->value.dval = retval.value.dval;
+                        break;
+                    case IS_STRING:
+                        retvalue->value.str.len = retval.value.str.len;
+                        retvalue->value.str.val = malloc(retval.value.str.len);
+                        memcpy(retvalue->value.str.val, retval.value.str.val, retval.value.str.len);
+                        break;
+                    default:
+                        retvalue->type = IS_NULL;
+                        break;
+                }
+            }
         }
     }
     zval_dtor(&retval);
-    /*
-    MAKE_STD_ZVAL(data);
-    ZVAL_STRINGL(data, message, len, 1);
-    printf("call back triggered!\n");
-    args[0] = data;
-    if(internal_resource->callback[callbackIndex]){
-        if (call_user_function(EG(function_table), NULL, internal_resource->callback[callbackIndex], &retval, 1, args TSRMLS_CC) == SUCCESS) {
-            zval_dtor(&retval);
-        }
-    }
-    zval_dtor(&retval);
-    zval_ptr_dtor(&(args[0]));
-    */
     freeArgs(nArgs, args);    
 }
 

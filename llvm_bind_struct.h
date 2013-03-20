@@ -9,4 +9,21 @@ typedef struct _llvm_resource{
     TSRMLS_D;
 } llvm_resource;
 
+
+typedef union _simple_value_value {
+    long lval;
+    double dval;
+    struct {
+        char *val;
+        int len;  
+    } str;
+} simple_value_value;
+
+
+
+typedef struct _simple_value_struct {
+    simple_value_value value;
+    zend_uchar type;
+} simple_value;
+
 #endif
