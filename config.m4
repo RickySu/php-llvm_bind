@@ -1,11 +1,6 @@
 dnl $Id$
 dnl config.m4 for extension llvm_bind
 
-AC_ARG_ENABLE(default-callback,
-  AC_HELP_STRING([--enable-default-callback], [Enable default callback for triggerCallback]),
-  AC_DEFINE(USE_DEFAULT_CALLBACK, 1, [use default callback])  
-)
-
 PHP_ARG_WITH(clang, clang path, [  --with-clang=[PATH]    llvm config path.[/usr/bin/clang]])
 AC_MSG_CHECKING(for clang)
 for i in $PHP_CLANG /usr/bin/clang /usr/local/bin/clang "";do
@@ -14,13 +9,6 @@ for i in $PHP_CLANG /usr/bin/clang /usr/local/bin/clang "";do
     break
   fi
 done
-
-if test -n "$CLANG"; then
-  AC_MSG_RESULT([$CLANG])
-  $CLANG -emit-llvm -O3 -S -c bitcode/triggerCallback.c -o bitcode/triggerCallback.s
-else
-  AC_MSG_RESULT(no)
-fi
 
 PHP_ARG_WITH(llvm-config, llvm config path, [  --with-llvm-config=[PATH]    llvm config path.[/usr/bin/llvm-config]])
 
