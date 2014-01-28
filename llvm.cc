@@ -26,17 +26,16 @@ void llvm_freeResource(LLVMRESOURCE Resource) {
     delete (LLVMResource *) Resource;
 }
 
-int llvm_callFunc(LLVMRESOURCE _Resource, const char *name, size_t name_length, char *errormsg, size_t errormsg_size) {
-    void(*call)();
-    call = llvm_getFunc(_Resource, name, name_length, errormsg, errormsg_size);
+void *llvm_callFunc(LLVMRESOURCE _Resource, const char *name, size_t name_length, void **argv, int argc, char *errormsg, size_t errormsg_size) {
+    fCall_t call;
+    call = llvm_getFunc(_Resource, name, name_length, argv, argc, errormsg, errormsg_size);
     if(call == NULL){
         return false;
     }
-    call();
-    return true;
+    return call(argv, argc);
 }
 
-fCall_t llvm_getFunc(LLVMRESOURCE _Resource, const char *name, size_t name_length, char *errormsg, size_t errormsg_size){
+fCall_t llvm_getFunc(LLVMRESOURCE _Resource, const char *name, size_t name_length, void **argv, int argc, char *errormsg, size_t errormsg_size){
     fCall_t call;
     std::string funcName, errorMessage;
     SMDiagnostic error;

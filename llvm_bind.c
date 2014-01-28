@@ -196,22 +196,32 @@ PHP_METHOD(LLVMBind, execute)
     char *name;
     int  name_len;
     zval *object = getThis();
+    zval *ret;
+    zval ***argv;
+    int argc;
     llvm_resource *internal_resource;
 
     internal_resource = (llvm_resource *)zend_object_store_get_object(object TSRMLS_CC);
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &name_len)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s*", &name, &name_len, &argv, &argc)) {
         return;
     }
 
     if(name_len==0){
-        RETURN_FALSE
+        RETURN_FALSE;
     }
 
-    if(llvm_callFunc(internal_resource->resource,name,name_len,internal_resource->last_error,ERROR_MESSAG_BUFFER_SIZE)>0){
-        RETURN_TRUE;
+    ret = llvm_callFunc(
+        internal_resource->resource,
+        name,
+        name_len,
+        NULL,
+        0,
+        internal_resource->last_error,
+        ERROR_MESSAG_BUFFER_SIZE);
+    if(ret == NULL){
+        RETURN_NULL();
     }
-
-    RETURN_FALSE;
+    RETURN_ZVAL(ret, 0, 0);
 }
 /*}}}*/
 
@@ -264,6 +274,8 @@ void initLLVMBindClass(TSRMLS_D)
     INIT_CLASS_ENTRY(ce, "LLVMBind", llvm_bind_methods);
     ce.create_object = create_llvm_resource;
     llvm_bind_ce = zend_register_internal_class(&ce TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("SIZEOF_ZVAL"), sizeof(zval) TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("SIZEOF_LONG"), sizeof(long) TSRMLS_CC);    
 }
 
 zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {
