@@ -52,7 +52,9 @@ if(!$LLVMBind->loadBitcode($Bitcode)){
 
 ```php
 $LLVMBind=new LLVMBind();
+$LLVMBind->loadBitcode($Bitcode); //load Bitcode
 $LLVMBind->registerFunction('main');
+main(); //execute
 ```
 
 ### full example
@@ -72,10 +74,13 @@ define i32 @main() nounwind uwtable {
 declare i32 @printf(i8*, ...)
 EOT;
 
+//replace function name with internal function prefix "LLVM_FN_"
+$Assembly = str_replace('@main()', '@'.LLVMBind::FUNCTION_PREFIX.'main()', $Assembly);
 $LLVMBind=new LLVMBind();
 $Bitcode=$LLVMBind->compileAssembly($Assembly,$optimize_level=3);
 $LLVMBind->loadBitcode($Bitcode);
-$LLVMBind->execute('main');
+$LLVMBind->registerFunction('main');
+main();
 ```
 
 your will get an output "OK".
@@ -83,4 +88,4 @@ your will get an output "OK".
 TODO
 =======
 
-add support for php 5.4
+pass parameter to registed function.
