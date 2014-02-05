@@ -47,6 +47,13 @@ ZEND_BEGIN_ARG_INFO(arginfo_llvm_bind_execute, 0)
 ZEND_END_ARG_INFO()
 /* }}} */
 
+/* {{{ arginfo */
+ZEND_BEGIN_ARG_INFO(arginfo_llvm_bind_registerFunction, 0)
+    ZEND_ARG_INFO(0, name)
+    ZEND_ARG_INFO(0, arginfo)
+ZEND_END_ARG_INFO()
+/* }}} */
+
 /* {{{ llvm_bind_methods[]
  *
  * Every user visible function must have an entry in llvm_bind_functions[].
@@ -57,6 +64,7 @@ const zend_function_entry llvm_bind_methods[] = {
         PHP_ME(LLVMBind,    compileAssembly,    arginfo_llvm_bind_compileAssembly,  ZEND_ACC_PUBLIC)
         PHP_ME(LLVMBind,    getLastError,    NULL,  ZEND_ACC_PUBLIC)
         PHP_ME(LLVMBind,    loadBitcode,    arginfo_llvm_bind_loadBitcode,  ZEND_ACC_PUBLIC)
+        PHP_ME(LLVMBind,    registerFunction,    arginfo_llvm_bind_registerFunction,  ZEND_ACC_PUBLIC)       
 	PHP_FE_END	/* Must be the last line in llvm_bind_functions[] */
 };
 /* }}} */
@@ -225,6 +233,42 @@ PHP_METHOD(LLVMBind, execute)
 }
 /*}}}*/
 
+/* {{{ proto string LLVMBind::registerFunction($functionName, $argInfo) */
+PHP_METHOD(LLVMBind, registerFunction)
+{
+    zval *object = getThis();
+    zval *argInfo;
+    char *functionName, *internalFunctionName;
+    uint functionName_len;
+    zend_arg_info **arg_info;
+    zend_function_entry functions[] = {
+        PHP_FE_END,
+        PHP_FE_END
+    };
+    llvm_resource *internal_resource;
+    
+    internal_resource = (llvm_resource *)zend_object_store_get_object(object TSRMLS_CC);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a", &functionName, &functionName_len, &argInfo)) {
+        return;
+    }
+    
+//    arg_info = emalloc(sizeof(zend_arg_info *)*);
+
+//    functions = ecalloc(sizeof(zend_function_entry)*2, 0);
+    
+    internalFunctionName = emalloc(sizeof(LLVM_FUNCTION_PREFIX) + functionName_len + 1);
+//    functions[0].arg_info = arginfo_llvm_bind_test;
+//   functions[0].num_args = 1;
+//    functions[1]
+    strcpy(internalFunctionName, LLVM_FUNCTION_PREFIX);
+    strcat(internalFunctionName, functionName);
+    functions[0].fname = &internalFunctionName[sizeof(LLVM_FUNCTION_PREFIX)-1];
+    functions[0].handler = llvm_getFunc(internal_resource->resource, internalFunctionName);
+    zend_register_functions(NULL, functions, NULL, 0 TSRMLS_CC);
+    efree(internalFunctionName);
+    RETURN_TRUE;    
+}
+
 /* {{{ proto string LLVMBind::compileAssembly($assembly) */
 PHP_METHOD(LLVMBind, compileAssembly)
 {
@@ -268,8 +312,11 @@ PHP_METHOD(LLVMBind, getLastError)
 }
 /*}}}*/
 
+
+
 void initLLVMBindClass(TSRMLS_D)
 {
+    zval unused;
     zend_class_entry ce;
     INIT_CLASS_ENTRY(ce, "LLVMBind", llvm_bind_methods);
     ce.create_object = create_llvm_resource;
@@ -284,7 +331,16 @@ void initLLVMBindClass(TSRMLS_D)
     zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_OBJ"), offsetof(zval, value.obj) TSRMLS_CC);
     zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_REFCOUNT__GC"), offsetof(zval, refcount__gc) TSRMLS_CC);
     zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_TYPE"), offsetof(zval, type) TSRMLS_CC);
-    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_IS_REF__GC"), offsetof(zval, is_ref__gc) TSRMLS_CC);    
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_IS_REF__GC"), offsetof(zval, is_ref__gc) TSRMLS_CC);
+    zend_declare_class_constant_string(llvm_bind_ce, ZEND_STRL("FUNCTION_PREFIX"), LLVM_FUNCTION_PREFIX TSRMLS_CC);
+    #ifdef ZTS
+    zend_declare_class_constant_bool(llvm_bind_ce, ZEND_STRL("ZTS"), 1 TSRMLS_CC);
+    zend_declare_class_constant_string(llvm_bind_ce, ZEND_STRL("TSRMLS_C"), "tsrm_ls" TSRMLS_CC);
+    #else 
+    zend_declare_class_constant_bool(llvm_bind_ce, ZEND_STRL("ZTS"), 0 TSRMLS_CC);
+    zend_declare_class_constant_string(llvm_bind_ce, ZEND_STRL("TSRMLS_C"), "" TSRMLS_CC);
+    #endif
+
 }
 
 zend_object_value create_llvm_resource(zend_class_entry *class_type TSRMLS_DC) {

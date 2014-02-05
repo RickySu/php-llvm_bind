@@ -28,28 +28,25 @@ void llvm_freeResource(LLVMRESOURCE Resource) {
 
 void *llvm_callFunc(LLVMRESOURCE _Resource, const char *name, size_t name_length, void **argv, int argc, char *errormsg, size_t errormsg_size) {
     fCall_t call;
-    call = llvm_getFunc(_Resource, name, name_length, argv, argc, errormsg, errormsg_size);
+    call = llvm_getFunc(_Resource, name);
     if(call == NULL){
         return false;
     }
     return call(argv, argc);
 }
 
-fCall_t llvm_getFunc(LLVMRESOURCE _Resource, const char *name, size_t name_length, void **argv, int argc, char *errormsg, size_t errormsg_size){
-    fCall_t call;
+fCall_t llvm_getFunc(LLVMRESOURCE _Resource, const char *name){
     std::string funcName, errorMessage;
-    SMDiagnostic error;
     Module *m;
-    funcName.assign(name, name_length);
+//    funcName.assign(name, strlen(name));
     LLVMResource *Resource = (LLVMResource *) _Resource;
     ExecutionEngine *ee = Resource->getExecutionEngine();
-
-    Function* func = ee->FindFunctionNamed(funcName.c_str());
+//funcName.c_str()
+    Function* func = ee->FindFunctionNamed(name);
     if (func == NULL) {
         return NULL;
     }
-    call = (fCall_t) ee->getPointerToFunction(func);
-    return call;
+    return (fCall_t) ee->getPointerToFunction(func);
 }
 
 size_t llvm_compileAssembly(LLVMRESOURCE _Resource, char *Buffer, size_t size, char *Output, size_t output_size, char *errormsg, size_t errormsg_size, int optimize_level) {
@@ -84,7 +81,7 @@ int llvm_loadBitcode(LLVMRESOURCE _Resource, char *Buffer, size_t size, char *er
     string error;
     Module *m;
     LLVMResource *Resource = (LLVMResource *) _Resource;
-    ExecutionEngine *ee = Resource->getExecutionEngine();
+//    ExecutionEngine *ee = Resource->getExecutionEngine();
     MemoryBuffer *Mem = MemoryBuffer::getMemBuffer(StringRef(Buffer, size), "", false);
     m = ParseBitcodeFile(Mem, Resource->getContext(), &error);
     if (m == NULL) {

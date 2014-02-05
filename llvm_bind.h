@@ -26,6 +26,8 @@ PHP_METHOD(LLVMBind, compileAssembly);
 PHP_METHOD(LLVMBind, execute);
 PHP_METHOD(LLVMBind, getLastError);
 PHP_METHOD(LLVMBind, loadBitcode);
+PHP_METHOD(LLVMBind, registerFunction);
+PHP_FUNCTION(aabbcc);
 
 void freeArgs(int nArgs, zval **args);
 

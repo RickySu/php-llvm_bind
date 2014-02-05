@@ -52,7 +52,7 @@ if(!$LLVMBind->loadBitcode($Bitcode)){
 
 ```php
 $LLVMBind=new LLVMBind();
-$LLVMBind->execute('some function');
+$LLVMBind->registerFunction('main');
 ```
 
 ### full example
