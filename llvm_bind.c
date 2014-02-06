@@ -316,22 +316,21 @@ PHP_METHOD(LLVMBind, getLastError)
 
 void initLLVMBindClass(TSRMLS_D)
 {
-    zval unused;
     zend_class_entry ce;
     INIT_CLASS_ENTRY(ce, "LLVMBind", llvm_bind_methods);
     ce.create_object = create_llvm_resource;
     llvm_bind_ce = zend_register_internal_class(&ce TSRMLS_CC);
     zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("SIZEOF_ZVAL"), sizeof(zval) TSRMLS_CC);
     zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("SIZEOF_LONG"), sizeof(long) TSRMLS_CC);
-    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_LVAL"), offsetof(zval, value.lval) TSRMLS_CC);
-    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_DVAL"), offsetof(zval, value.dval) TSRMLS_CC);
-    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_STR_VAL"), offsetof(zval, value.str.val) TSRMLS_CC);
-    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_STR_LEN"), offsetof(zval, value.str.len) TSRMLS_CC);
-    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_HT"), offsetof(zval, value.ht) TSRMLS_CC);
-    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_OBJ"), offsetof(zval, value.obj) TSRMLS_CC);
-    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_REFCOUNT__GC"), offsetof(zval, refcount__gc) TSRMLS_CC);
-    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_TYPE"), offsetof(zval, type) TSRMLS_CC);
-    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_IS_REF__GC"), offsetof(zval, is_ref__gc) TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_LVAL"), (ulong)((void*)&((zval*)0)->value.lval) TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_DVAL"), (ulong)((void*)&((zval*)0)->value.dval) TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_STR_VAL"), (ulong)((void*)&((zval*)0)->value.str.val) TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_STR_LEN"), (ulong)((void*)&((zval*)0)->value.str.len) TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_HT"), (ulong)((void*)&((zval*)0)->value.ht) TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_OBJ"), (ulong)((void*)&((zval*)0)->value.obj) TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_REFCOUNT__GC"), (ulong)((void*)&((zval*)0)->refcount__gc) TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_TYPE"), (ulong)((void*)&((zval*)0)->type) TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_IS_REF__GC"), (ulong)((void*)&((zval*)0)->is_ref__gc) TSRMLS_CC);    
     zend_declare_class_constant_string(llvm_bind_ce, ZEND_STRL("FUNCTION_PREFIX"), LLVM_FUNCTION_PREFIX TSRMLS_CC);
     #ifdef ZTS
     zend_declare_class_constant_bool(llvm_bind_ce, ZEND_STRL("ZTS"), 1 TSRMLS_CC);
