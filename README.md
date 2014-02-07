@@ -48,6 +48,55 @@ if(!$LLVMBind->loadBitcode($Bitcode)){
 }
 ```
 
+### register a function
+```php
+//function prototype
+function test1(&$a, $b=20, array $c = null, testClass $d=null){}
+```
+
+```php
+$LLVMBind=new LLVMBind();
+$LLVMBind->loadBitcode($Bitcode); //load Bitcode
+$LLVMBind->registerFunction('test1', array(
+    'a' => array(
+        true,  //pass_by_reference
+        0,     //no type hint
+        null,  //no type hint class
+    ),
+    'b' => array(
+        false,  //pass_by_reference
+        0,      //no type hint
+        null,   //no type hint class
+        20,     //with default value and is optional
+    ),
+    'c' => array(
+        false,                   //pass_by_reference
+        LLVMBind::IS_ARRAY,      //with array type hint
+        null,                    //no type hint class
+        null,                    //with default value null and is optional
+    ),
+    'd' => array(
+        false,                   //pass_by_reference
+        LLVMBind::IS_OBJECT,     //with object type hint
+        'testClass',             //with type hint class 'testClass'
+        null,                    //with default value null and is optional
+    ),
+));
+```
+
+reflaction function output
+```
+Function [ <internal> function test1 ] {
+
+  - Parameters [4] {
+    Parameter #0 [ <required> &$a ]
+    Parameter #1 [ <optional> $b ]
+    Parameter #2 [ <optional> array or NULL $c ]
+    Parameter #3 [ <optional> testClass or NULL $d ]
+  }
+}
+```
+
 ### execute a function
 
 ```php

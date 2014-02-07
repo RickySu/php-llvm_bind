@@ -307,10 +307,8 @@ PHP_METHOD(LLVMBind, registerFunction)
             Z_ARRVAL_PP(arrayElement_p),
             3,
             (void**) &zvalue_p) != FAILURE) {
-            if(Z_TYPE_PP(zvalue_p) != IS_LONG){
-                arg_info[index+1].allow_null = 1;
-                require_argInfo_count--;
-            }
+            arg_info[index+1].allow_null = 1;
+            require_argInfo_count--;
         }
         index++;
     }
