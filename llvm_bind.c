@@ -237,14 +237,17 @@ PHP_METHOD(LLVMBind, execute)
 PHP_METHOD(LLVMBind, registerFunction)
 {
     zval *object = getThis();
-    zval *argInfo;
-    char *functionName, *internalFunctionName;
+    zval *argInfo, **arrayElement_p, **zvalue_p;
+    int  argInfo_count, index, require_argInfo_count;    
+    HashTable *argInfo_hash;
+    HashPosition pointer;
+    char *key;
+    uint klen;
+    ulong key_index;
+    char *functionName, *internalFunctionName, *tmpClassName;
     uint functionName_len;
-    zend_arg_info **arg_info;
-    zend_function_entry functions[] = {
-        PHP_FE_END,
-        PHP_FE_END
-    };
+    zend_arg_info *arg_info;
+    zend_function_entry *functions;
     llvm_resource *internal_resource;
     
     internal_resource = (llvm_resource *)zend_object_store_get_object(object TSRMLS_CC);
@@ -252,20 +255,78 @@ PHP_METHOD(LLVMBind, registerFunction)
         return;
     }
     
-//    arg_info = emalloc(sizeof(zend_arg_info *)*);
-
-//    functions = ecalloc(sizeof(zend_function_entry)*2, 0);
+    functions = ecalloc(2, sizeof(zend_function_entry));
     
+    argInfo_hash = Z_ARRVAL_P(argInfo); 
+    require_argInfo_count = argInfo_count = zend_hash_num_elements(argInfo_hash);
+    arg_info = ecalloc(argInfo_count+1, sizeof(zend_arg_info));
+    index=0;
+    for(zend_hash_internal_pointer_reset_ex(argInfo_hash, &pointer); 
+        zend_hash_get_current_data_ex(argInfo_hash, (void**) &arrayElement_p, &pointer) == SUCCESS;
+        zend_hash_move_forward_ex(argInfo_hash, &pointer)) {
+        if(HASH_KEY_IS_STRING != zend_hash_get_current_key_ex(argInfo_hash, &key, &klen, &key_index, 0, &pointer)){
+            RETURN_FALSE;
+        }
+        arg_info[index+1].name = key;
+        arg_info[index+1].name_len = klen-1;
+        
+        if(zend_hash_index_find( //pass_by_reference
+            Z_ARRVAL_PP(arrayElement_p),
+            0,
+            (void**) &zvalue_p) != FAILURE){
+//            SEPARATE_ZVAL(zvalue_p);
+//            convert_to_boolean_ex(zvalue_p);
+            if(Z_TYPE_PP(zvalue_p) == IS_BOOL || Z_TYPE_PP(zvalue_p) == IS_LONG){
+                arg_info[index+1].pass_by_reference = Z_LVAL_PP(zvalue_p) && 1;
+            }
+//            zval_dtor(zvalue_p);
+        }
+
+        if(zend_hash_index_find( //type_hint
+            Z_ARRVAL_PP(arrayElement_p),
+            1,
+            (void**) &zvalue_p) != FAILURE) {
+            if(Z_TYPE_PP(zvalue_p) == IS_LONG){
+                arg_info[index+1].type_hint = Z_LVAL_PP(zvalue_p);
+            }
+        }
+        
+        if(zend_hash_index_find( //class_name
+            Z_ARRVAL_PP(arrayElement_p),
+            2,
+            (void**) &zvalue_p) != FAILURE) {
+            if(Z_TYPE_PP(zvalue_p) == IS_STRING){
+                tmpClassName = ecalloc(Z_STRLEN_PP(zvalue_p)+1, 1);
+                memcpy(tmpClassName, Z_STRVAL_PP(zvalue_p), Z_STRLEN_PP(zvalue_p));
+                arg_info[index+1].class_name = tmpClassName;
+                arg_info[index+1].class_name_len = Z_STRLEN_PP(zvalue_p);
+            }
+        }
+
+        if(zend_hash_index_find( // default value
+            Z_ARRVAL_PP(arrayElement_p),
+            3,
+            (void**) &zvalue_p) != FAILURE) {
+            if(Z_TYPE_PP(zvalue_p) != IS_LONG){
+                arg_info[index+1].allow_null = 1;
+                require_argInfo_count--;
+            }
+        }
+        index++;
+    }
+    
+    //set required_num_args
+    arg_info[0].class_name_len = require_argInfo_count;    
     internalFunctionName = emalloc(sizeof(LLVM_FUNCTION_PREFIX) + functionName_len + 1);
-//    functions[0].arg_info = arginfo_llvm_bind_test;
-//   functions[0].num_args = 1;
-//    functions[1]
+    functions[0].arg_info = arg_info;
+    functions[0].num_args = argInfo_count;
     strcpy(internalFunctionName, LLVM_FUNCTION_PREFIX);
     strcat(internalFunctionName, functionName);
     functions[0].fname = &internalFunctionName[sizeof(LLVM_FUNCTION_PREFIX)-1];
     functions[0].handler = llvm_getFunc(internal_resource->resource, internalFunctionName);
     zend_register_functions(NULL, functions, NULL, 0 TSRMLS_CC);
-    efree(internalFunctionName);
+//    efree(internalFunctionName);
+//    efree(arg_info);
     RETURN_TRUE;    
 }
 
@@ -320,6 +381,16 @@ void initLLVMBindClass(TSRMLS_D)
     INIT_CLASS_ENTRY(ce, "LLVMBind", llvm_bind_methods);
     ce.create_object = create_llvm_resource;
     llvm_bind_ce = zend_register_internal_class(&ce TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("IS_NULL"), IS_NULL TSRMLS_CC);    
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("IS_LONG"), IS_LONG TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("IS_DOUBLE"), IS_DOUBLE TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("IS_STRING"), IS_STRING TSRMLS_CC);            
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("IS_ARRAY"), IS_ARRAY TSRMLS_CC);        
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("IS_OBJECT"), IS_OBJECT TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("IS_BOOL"), IS_BOOL TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("IS_RESOURCE"), IS_RESOURCE TSRMLS_CC);
+    zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("IS_CONSTANT"), IS_CONSTANT TSRMLS_CC);
+
     zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("SIZEOF_ZVAL"), sizeof(zval) TSRMLS_CC);
     zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("SIZEOF_LONG"), sizeof(long) TSRMLS_CC);
     zend_declare_class_constant_long(llvm_bind_ce, ZEND_STRL("OFFSETOF_ZVAL_VALUE_LVAL"), (ulong)((void*)&((zval*)0)->value.lval) TSRMLS_CC);
